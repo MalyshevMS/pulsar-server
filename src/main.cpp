@@ -4,11 +4,63 @@
 #include <thread>
 #include <mutex>
 #include <algorithm>
+#include "lib/jsonlib.h"
+#include "Database.hpp"
+#include "Datetime.hpp"
 
 #pragma GCC diagnostic ignored "-Wunused-result"
 
 std::vector<sf::TcpSocket*> clients;
 std::mutex clientsMutex;
+
+Database db("res/database.json");
+
+#define PULSAR_PORT 4171
+
+void sendAll(const std::string& message) {
+    for (auto& client : clients) {
+        sf::Packet sendPacket;
+        sendPacket << message;
+        client->send(sendPacket);
+    }
+}
+
+void sendAllExcept(const std::string& message, sf::TcpSocket* exception) {
+    for (auto& client : clients) {
+        if (client != exception) {
+            sf::Packet sendPacket;
+            sendPacket << message;
+            client->send(sendPacket);
+        }
+    }
+}
+
+void sendTo(const std::string& message, sf::TcpSocket* dest) {
+    sf::Packet sendPacket;
+    sendPacket << message;
+    dest->send(sendPacket);
+}
+
+std::string parseRequest(const std::string& req) {
+    if (req.substr(0, 3) == "!db") {
+        db.save();
+
+        if (req.substr(4, 4) == "user") {
+            return jsonToString(db.user(req.substr(9, std::string::npos)));
+        }
+        else if (req.substr(4, 7) == "channel") {
+            return jsonToString(db.channel(req.substr(12, std::string::npos)));
+        }
+
+        else return "Invalid database request!";
+    }
+
+    else if (req.substr(0, 8) == "!connect") {
+        return "(Server response) Connected!";
+    }
+
+    else return "Invalid request!";
+}
 
 void handleClient(sf::TcpSocket* clientSocket) {
     std::cout << "Client connected: " << *clientSocket->getRemoteAddress() << std::endl;
@@ -20,23 +72,26 @@ void handleClient(sf::TcpSocket* clientSocket) {
             packet >> message;
             
             std::cout << "Received: " << message << std::endl;
+            auto json = Json::parse(message);
             
-            // Отправляем сообщение всем клиентам
-            std::lock_guard<std::mutex> lock(clientsMutex);
-            for (auto& client : clients) {
-                if (client != clientSocket) {
-                    sf::Packet sendPacket;
-                    sendPacket << message;
-                    client->send(sendPacket);
-                }
+            if (std::string(json["dst"]) == "!server") {
+                auto ans = Json({
+                    {"type", "message"},
+                    {"time", Datetime::now().toTime()},
+                    {"src", "!server"},
+                    {"dst", json["src"]},
+                    {"msg", parseRequest(json["msg"])}
+                });
+
+                std::lock_guard<std::mutex> lock(clientsMutex);
+                sendTo(jsonToString(ans), clientSocket);
+                continue;
             }
-        } else {
-            // Клиент отключился
-            break;
-        }
+            std::lock_guard<std::mutex> lock(clientsMutex);
+            sendAllExcept(message, clientSocket);
+        } else break;
     }
     
-    // Удаляем клиента из списка
     std::lock_guard<std::mutex> lock(clientsMutex);
     clients.erase(std::remove(clients.begin(), clients.end(), clientSocket), clients.end());
     delete clientSocket;
@@ -47,13 +102,15 @@ void handleClient(sf::TcpSocket* clientSocket) {
 int main() {
     sf::TcpListener listener;
     
-    // Запускаем прослушивание на порту 53000
-    if (listener.listen(53000) != sf::Socket::Status::Done) {
-        std::cout << "Error: Could not listen on port 53000" << std::endl;
+    if (listener.listen(PULSAR_PORT) != sf::Socket::Status::Done) {
+        std::cout << "Error: Could not listen on port " << PULSAR_PORT << std::endl;
         return 1;
     }
     
-    std::cout << "Server started on port 53000" << std::endl;
+    std::cout << "Server started on port " << PULSAR_PORT << std::endl;
+
+    db.add_user("@test");
+    db.add_channel(":ch");
     
     while (true) {
         sf::TcpSocket* clientSocket = new sf::TcpSocket;
@@ -62,7 +119,6 @@ int main() {
             std::lock_guard<std::mutex> lock(clientsMutex);
             clients.push_back(clientSocket);
             
-            // Запускаем отдельный поток для обработки клиента
             std::thread clientThread(handleClient, clientSocket);
             clientThread.detach();
         } else {
