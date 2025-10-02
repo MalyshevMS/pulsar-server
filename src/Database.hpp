@@ -11,7 +11,7 @@
         "type": "database",
         "users": {
             "@user": {
-                "password": (none/string) // TODO: Make it hashed
+                "password": (none/string),
                 "name": "user's real name (string)",
                 "channels": [array with channels names],
                 "contacts": {
@@ -94,6 +94,10 @@ public:
         return db["channels"][channelname];
     }
 
+    bool contains_user(const std::string& username) { return db["users"].contains(username); }
+    bool contains_channel(const std::string& channelname) { return db["channels"].contains(channelname); }
+
+    /// @param password hashed password string
     void set_password(const std::string& username, const std::string& password) {
         if (!db["users"].contains(username)) return;
 
@@ -101,9 +105,11 @@ public:
         else db["users"][username]["password"] = password;
     }
 
+    /// @param password hashed password string
     bool login(const std::string& username, const std::string& password) {
         if (!db["users"].contains(username)) return false;
 
+        if (db["users"][username]["password"] == Json()) return true;
         return std::string(db["users"][username]["password"]) == password;
     }
 };

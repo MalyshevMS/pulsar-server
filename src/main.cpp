@@ -5,6 +5,7 @@
 #include <mutex>
 #include <algorithm>
 #include "lib/jsonlib.h"
+#include "lib/hash.h"
 #include "Database.hpp"
 #include "Datetime.hpp"
 
@@ -55,8 +56,16 @@ std::string parseRequest(const std::string& req) {
         else return "Invalid database request!";
     }
 
-    else if (req.substr(0, 8) == "!connect") {
-        return "(Server response) Connected!";
+    else if (req.substr(0, 6) == "!login") {
+        auto json = Json::parse(req.substr(7, std::string::npos));
+        auto login = std::string(json[0]);
+        auto password = std::string(json[1]);
+        if (!db.contains_user(login))
+            return "login fail_username";
+        if (db.login(login, password))
+            return "login success";
+        else
+            return "login fail_password";
     }
 
     else return "Invalid request!";
@@ -111,6 +120,8 @@ int main() {
 
     db.add_user("@test");
     db.add_channel(":ch");
+
+    db.set_password("@test", hash("123"));
     
     while (true) {
         sf::TcpSocket* clientSocket = new sf::TcpSocket;
