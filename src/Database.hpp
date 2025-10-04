@@ -71,6 +71,8 @@ public:
         db["users"][username]["contacts"] = Json::object();
         db["users"][username]["email"] = "EMAIL";
         db["users"][username]["status"] = "active";
+
+        db["users"][username]["channels"].push_back(":all");
     }
 
     void add_channel(const std::string& channelname) {

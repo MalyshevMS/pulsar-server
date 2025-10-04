@@ -118,6 +118,8 @@ int main() {
     
     std::cout << "Server started on port " << PULSAR_PORT << std::endl;
 
+    db.add_channel(":all");
+
     db.add_user("@test");
     db.add_channel(":ch");
 
