@@ -68,6 +68,17 @@ std::string parseRequest(const std::string& req) {
             return "login fail_password";
     }
 
+    else if (req.substr(0, 9) == "!register") {
+        auto json = Json::parse(req.substr(10, std::string::npos));
+        auto login = std::string(json[0]);
+        auto password = std::string(json[1]);
+
+        db.add_user(login);
+        db.set_password(login, password);
+
+        return "login success"; 
+    }
+
     else return "Invalid request!";
 }
 
