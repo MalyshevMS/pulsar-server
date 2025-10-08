@@ -128,13 +128,6 @@ int main() {
     }
     
     std::cout << "Server started on port " << PULSAR_PORT << std::endl;
-
-    db.add_channel(":all");
-
-    db.add_user("@test");
-    db.add_channel(":ch");
-
-    db.set_password("@test", hash("123"));
     
     while (true) {
         sf::TcpSocket* clientSocket = new sf::TcpSocket;

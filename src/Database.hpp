@@ -46,9 +46,13 @@ public:
             this->path = path;
         } else throw std::runtime_error("Database not exists!");
 
-        db["type"] = "database";
-        db["users"] = Json::object();
-        db["channels"] = Json::object();
+        if (db.empty()) {
+            db["type"] = "database";
+            db["users"] = Json::object();
+            db["channels"] = Json::object();
+        }
+
+        std::cout << "Loaded database from " << path << std::endl;
     }
 
     std::string toString() {

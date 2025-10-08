@@ -1,5 +1,29 @@
 {
+    "channels": {
+        ":all": {
+            "admins": [],
+            "members": [],
+            "name": ":all",
+            "status": "active"
+        },
+        ":ch": {
+            "admins": [],
+            "members": [],
+            "name": ":ch",
+            "status": "active"
+        }
+    },
     "type": "database",
-    "users": {},
-    "channels": {}
+    "users": {
+        "@test": {
+            "channels": [
+                ":all"
+            ],
+            "contacts": {},
+            "email": "EMAIL",
+            "name": "@test",
+            "password": "d7ea031bb700cf4d",
+            "status": "active"
+        }
+    }
 }
