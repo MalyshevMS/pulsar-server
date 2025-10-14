@@ -42,7 +42,7 @@ void sendTo(const std::string& message, sf::TcpSocket* dest) {
     dest->send(sendPacket);
 }
 
-std::string parseRequest(const std::string& req) {
+std::string parseRequest(const std::string& req, const std::string& src) {
     if (req.substr(0, 3) == "!db") {
         db.save();
 
@@ -79,6 +79,13 @@ std::string parseRequest(const std::string& req) {
         return "login success"; 
     }
 
+    else if (req.substr(0, 5) == "!join") {
+        auto channel = req.substr(6, std::string::npos);
+        if (db.join(src, channel)) {
+            return "+join " + channel;
+        } else return "-join " + channel;
+    }
+
     else return "Invalid request!";
 }
 
@@ -100,7 +107,7 @@ void handleClient(sf::TcpSocket* clientSocket) {
                     {"time", Datetime::now().toTime()},
                     {"src", "!server"},
                     {"dst", json["src"]},
-                    {"msg", parseRequest(json["msg"])}
+                    {"msg", parseRequest(json["msg"], json["src"])}
                 });
 
                 std::lock_guard<std::mutex> lock(clientsMutex);

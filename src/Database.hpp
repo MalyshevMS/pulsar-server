@@ -118,4 +118,12 @@ public:
         if (db["users"][username]["password"] == Json()) return true;
         return std::string(db["users"][username]["password"]) == password;
     }
+
+    bool join(const std::string& username, const std::string& channelname) {
+        if (!db["users"].contains(username) || !db["channels"].contains(channelname)) return false;
+
+        db["users"][username]["channels"].push_back(channelname);
+        db["channels"][channelname]["members"].push_back(username);
+        return true;
+    }
 };
