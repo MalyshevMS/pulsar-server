@@ -101,6 +101,16 @@ void handleClient(sf::TcpSocket* clientSocket) {
             std::cout << "Received: " << message << std::endl;
             auto json = Json::parse(message);
             
+            if (!db.contains_channel(json["dst"]) && !db.contains_user(json["dst"]) && json["dst"] != "!server") {
+                auto ans = Json({
+                    {"type", "error"},
+                    {"time", Datetime::now().toTime()},
+                    {"src", "!server"},
+                    {"dst", json["src"]},
+                    {"msg", "No such user or channel!"}
+                });
+                sendTo(jsonToString(ans), clientSocket);
+            }
             if (std::string(json["dst"]) == "!server") {
                 auto ans = Json({
                     {"type", "message"},
