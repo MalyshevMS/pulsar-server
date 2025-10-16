@@ -3,8 +3,6 @@
 #include <iomanip>
 #include <sstream>
 
-#define PULSAR_SALT "57afbe95a4be3a9d"
-
 std::string hash(const std::string& unhashed) {
     std::hash<std::string> hasher;
     size_t hash1 = hasher(PULSAR_SALT + unhashed);

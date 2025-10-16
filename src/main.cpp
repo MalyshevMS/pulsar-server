@@ -1,3 +1,5 @@
+#include "defines"
+
 #include <SFML/Network.hpp>
 #include <iostream>
 #include <vector>
@@ -8,6 +10,7 @@
 #include "lib/hash.h"
 #include "Database.hpp"
 #include "Datetime.hpp"
+#include "Chat.hpp"
 
 #pragma GCC diagnostic ignored "-Wunused-result"
 
@@ -145,6 +148,12 @@ int main() {
     }
     
     std::cout << "Server started on port " << PULSAR_PORT << std::endl;
+    std::cout << time(0x0) << std::endl;
+    Chat(":all").write(time(0x0), "@test", "hi");
+    Chat(":all").write(time(0x0) + 1, "@test1", "hello!");
+    for (auto i : Chat(":all").read(10)) {
+        std::cout << i << std::endl;
+    }
     
     while (true) {
         sf::TcpSocket* clientSocket = new sf::TcpSocket;
